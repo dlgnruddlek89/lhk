@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Claude — Anthropic의 AI 어시스턴트</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a0f;
+      --surface: #13131a;
+      --surface2: #1c1c28;
+      --border: #2a2a3a;
+      --accent: #c9a96e;
+      --accent2: #7c6fcd;
+      --text: #e8e8f0;
+      --muted: #8888a0;
+      --radius: 16px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      line-height: 1.7;
+      overflow-x: hidden;
+    }
+
+    /* NAV */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1rem 2rem;
+      background: rgba(10,10,15,0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-logo { font-size: 1.3rem; font-weight: 700; color: var(--accent); letter-spacing: -0.5px; }
+    .nav-links { display: flex; gap: 2rem; }
+    .nav-links a { color: var(--muted); text-decoration: none; font-size: 0.9rem; transition: color .2s; }
+    .nav-links a:hover { color: var(--text); }
+
+    /* HERO */
+    .hero {
+      min-height: 100vh;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      text-align: center; padding: 6rem 2rem 4rem;
+      position: relative; overflow: hidden;
+    }
+    .hero-bg {
+      position: absolute; inset: 0; z-index: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 50% 0%, rgba(124,111,205,0.15) 0%, transparent 70%),
+        radial-gradient(ellipse 60% 40% at 80% 80%, rgba(201,169,110,0.1) 0%, transparent 60%);
+    }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 100px; padding: 0.4rem 1rem;
+      font-size: 0.8rem; color: var(--accent); margin-bottom: 2rem;
+      position: relative; z-index: 1;
+    }
+    .hero-badge span { width: 6px; height: 6px; background: var(--accent); border-radius: 50%; display: inline-block; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(1.4)} }
+
+    .hero h1 {
+      font-size: clamp(2.8rem, 8vw, 6rem);
+      font-weight: 800; letter-spacing: -2px; line-height: 1.05;
+      position: relative; z-index: 1; margin-bottom: 1.5rem;
+    }
+    .hero h1 em { font-style: normal; color: var(--accent); }
+    .hero p {
+      font-size: clamp(1rem, 2vw, 1.25rem);
+      color: var(--muted); max-width: 580px; margin: 0 auto 2.5rem;
+      position: relative; z-index: 1;
+    }
+    .hero-cta {
+      display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center;
+      position: relative; z-index: 1;
+    }
+    .btn {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      padding: 0.8rem 1.8rem; border-radius: 100px; font-size: 0.95rem;
+      font-weight: 600; text-decoration: none; transition: all .2s; cursor: pointer; border: none;
+    }
+    .btn-primary { background: var(--accent); color: #0a0a0f; }
+    .btn-primary:hover { background: #d4b47a; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(201,169,110,0.3); }
+    .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+    .btn-secondary:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-2px); }
+
+    /* SECTION */
+    section { padding: 6rem 2rem; max-width: 1100px; margin: 0 auto; }
+    .section-label { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px; color: var(--accent); margin-bottom: 1rem; }
+    .section-title { font-size: clamp(1.8rem, 4vw, 2.8rem); font-weight: 700; letter-spacing: -1px; margin-bottom: 1rem; }
+    .section-desc { color: var(--muted); font-size: 1.05rem; max-width: 560px; }
+
+    /* FEATURES */
+    #features { max-width: 1100px; }
+    .features-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem; margin-top: 3rem;
+    }
+    .feature-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 2rem;
+      transition: all .25s;
+    }
+    .feature-card:hover { border-color: var(--accent2); transform: translateY(-4px); box-shadow: 0 12px 32px rgba(0,0,0,0.3); }
+    .feature-icon { font-size: 2rem; margin-bottom: 1rem; }
+    .feature-card h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 0.6rem; }
+    .feature-card p { color: var(--muted); font-size: 0.93rem; }
+
+    /* MODELS */
+    #models { max-width: 1100px; }
+    .models-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.5rem; margin-top: 3rem;
+    }
+    .model-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 2rem; position: relative; overflow: hidden;
+      transition: all .25s;
+    }
+    .model-card:hover { transform: translateY(-4px); box-shadow: 0 12px 32px rgba(0,0,0,0.3); }
+    .model-card.featured { border-color: var(--accent); }
+    .model-card.featured::before {
+      content: '추천'; position: absolute; top: 1rem; right: 1rem;
+      background: var(--accent); color: #0a0a0f; font-size: 0.7rem;
+      font-weight: 700; padding: 0.2rem 0.6rem; border-radius: 100px;
+    }
+    .model-name { font-size: 1.3rem; font-weight: 800; margin-bottom: 0.3rem; }
+    .model-tag { font-size: 0.8rem; color: var(--accent); margin-bottom: 1rem; }
+    .model-desc { color: var(--muted); font-size: 0.9rem; margin-bottom: 1.2rem; }
+    .model-specs { display: flex; flex-direction: column; gap: 0.4rem; }
+    .spec { display: flex; justify-content: space-between; font-size: 0.85rem; }
+    .spec-label { color: var(--muted); }
+    .spec-value { font-weight: 600; color: var(--text); }
+
+    /* PRINCIPLES */
+    #principles { max-width: 1100px; }
+    .principles-list { display: flex; flex-direction: column; gap: 1rem; margin-top: 3rem; }
+    .principle {
+      display: flex; gap: 1.5rem; align-items: flex-start;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1.5rem 2rem;
+      transition: border-color .2s;
+    }
+    .principle:hover { border-color: var(--accent2); }
+    .principle-num { font-size: 1.5rem; font-weight: 800; color: var(--border); min-width: 2rem; }
+    .principle h3 { font-size: 1rem; font-weight: 700; margin-bottom: 0.3rem; }
+    .principle p { color: var(--muted); font-size: 0.9rem; }
+
+    /* CTA SECTION */
+    .cta-section {
+      text-align: center; padding: 6rem 2rem;
+      background: linear-gradient(135deg, var(--surface) 0%, var(--surface2) 100%);
+      border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+    }
+    .cta-section h2 { font-size: clamp(1.8rem, 4vw, 2.8rem); font-weight: 700; letter-spacing: -1px; margin-bottom: 1rem; }
+    .cta-section p { color: var(--muted); margin-bottom: 2rem; font-size: 1.05rem; }
+
+    /* FOOTER */
+    footer {
+      text-align: center; padding: 2rem;
+      color: var(--muted); font-size: 0.85rem;
+      border-top: 1px solid var(--border);
+    }
+    footer a { color: var(--accent); text-decoration: none; }
+
+    /* DIVIDER */
+    .divider { width: 100%; height: 1px; background: var(--border); }
+
+    @media (max-width: 640px) {
+      .nav-links { display: none; }
+      .hero h1 { letter-spacing: -1px; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <div class="nav-logo">Claude</div>
+    <div class="nav-links">
+      <a href="#features">기능</a>
+      <a href="#models">모델</a>
+      <a href="#principles">원칙</a>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-badge"><span></span> Anthropic이 만든 AI 어시스턴트</div>
+    <h1>당신의 지식을<br /><em>확장</em>하는 AI</h1>
+    <p>Claude는 안전하고 신뢰할 수 있는 AI 어시스턴트입니다. 복잡한 문제를 분석하고, 코드를 작성하며, 창의적인 작업을 함께합니다.</p>
+    <div class="hero-cta">
+      <a href="https://claude.ai" class="btn btn-primary" target="_blank">무료로 시작하기</a>
+      <a href="#features" class="btn btn-secondary">더 알아보기</a>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- FEATURES -->
+  <section id="features">
+    <div class="section-label">핵심 기능</div>
+    <h2 class="section-title">Claude가 할 수 있는 것들</h2>
+    <p class="section-desc">다양한 도메인에서 전문적인 수준의 도움을 제공합니다.</p>
+
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">💻</div>
+        <h3>코드 작성 & 디버깅</h3>
+        <p>Python, JavaScript, TypeScript, Go 등 다양한 언어로 코드를 작성하고 버그를 찾아 수정합니다.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📄</div>
+        <h3>문서 분석 & 요약</h3>
+        <p>긴 문서, 논문, 계약서를 읽고 핵심 내용을 빠르게 정리해 드립니다.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">✍️</div>
+        <h3>창의적 글쓰기</h3>
+        <p>블로그 포스트, 보고서, 이메일, 소설 등 다양한 형식의 글을 함께 작성합니다.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔬</div>
+        <h3>데이터 분석 & 리서치</h3>
+        <p>복잡한 데이터를 해석하고 심층적인 리서치를 수행하여 인사이트를 도출합니다.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🌐</div>
+        <h3>다국어 지원</h3>
+        <p>한국어, 영어, 일본어, 중국어 등 다양한 언어로 자연스럽게 대화합니다.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🤖</div>
+        <h3>에이전트 & 자동화</h3>
+        <p>Claude Code, MCP 등을 통해 복잡한 워크플로우를 자동화하고 도구를 직접 사용합니다.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- MODELS -->
+  <section id="models">
+    <div class="section-label">모델 라인업</div>
+    <h2 class="section-title">목적에 맞는 모델 선택</h2>
+    <p class="section-desc">속도와 성능 사이에서 최적의 균형을 찾아보세요.</p>
+
+    <div class="models-grid">
+      <div class="model-card">
+        <div class="model-name">Haiku</div>
+        <div class="model-tag">claude-haiku-4-5</div>
+        <div class="model-desc">빠른 응답이 필요한 간단한 작업에 최적화된 경량 모델입니다.</div>
+        <div class="model-specs">
+          <div class="spec"><span class="spec-label">속도</span><span class="spec-value">매우 빠름</span></div>
+          <div class="spec"><span class="spec-label">용도</span><span class="spec-value">분류, 요약, 간단한 Q&A</span></div>
+        </div>
+      </div>
+      <div class="model-card featured">
+        <div class="model-name">Sonnet</div>
+        <div class="model-tag">claude-sonnet-4-6</div>
+        <div class="model-desc">성능과 속도의 균형이 뛰어나 대부분의 작업에 가장 적합합니다.</div>
+        <div class="model-specs">
+          <div class="spec"><span class="spec-label">속도</span><span class="spec-value">빠름</span></div>
+          <div class="spec"><span class="spec-label">용도</span><span class="spec-value">코딩, 분석, 글쓰기</span></div>
+        </div>
+      </div>
+      <div class="model-card">
+        <div class="model-name">Opus</div>
+        <div class="model-tag">claude-opus-4-8</div>
+        <div class="model-desc">가장 강력한 추론 능력으로 복잡하고 심층적인 작업을 처리합니다.</div>
+        <div class="model-specs">
+          <div class="spec"><span class="spec-label">성능</span><span class="spec-value">최상급</span></div>
+          <div class="spec"><span class="spec-label">용도</span><span class="spec-value">복잡한 추론, 연구, 전략</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- PRINCIPLES -->
+  <section id="principles">
+    <div class="section-label">핵심 원칙</div>
+    <h2 class="section-title">Anthropic의 AI 안전 철학</h2>
+    <p class="section-desc">Claude는 안전하고 유익하며 정직한 AI를 목표로 설계되었습니다.</p>
+
+    <div class="principles-list">
+      <div class="principle">
+        <div class="principle-num">01</div>
+        <div>
+          <h3>안전성 (Safety)</h3>
+          <p>사용자와 사회에 해를 끼치지 않도록 설계되었습니다. 위험한 정보 제공을 거부하고 윤리적 경계를 지킵니다.</p>
+        </div>
+      </div>
+      <div class="principle">
+        <div class="principle-num">02</div>
+        <div>
+          <h3>정직성 (Honesty)</h3>
+          <p>모르는 것은 모른다고 말하고, 불확실한 것은 불확실하다고 표현합니다. 거짓말하거나 오도하지 않습니다.</p>
+        </div>
+      </div>
+      <div class="principle">
+        <div class="principle-num">03</div>
+        <div>
+          <h3>유익함 (Helpfulness)</h3>
+          <p>사용자의 실제 의도를 파악하여 진정으로 도움이 되는 응답을 제공합니다. 불필요한 거절을 최소화합니다.</p>
+        </div>
+      </div>
+      <div class="principle">
+        <div class="principle-num">04</div>
+        <div>
+          <h3>Constitutional AI</h3>
+          <p>Anthropic이 개발한 훈련 방법으로, AI가 스스로 원칙에 따라 행동을 평가하고 개선합니다.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <div class="cta-section">
+    <h2>지금 바로 시작하세요</h2>
+    <p>Claude와 함께 더 스마트하게 일하고 배우세요.</p>
+    <a href="https://claude.ai" class="btn btn-primary" target="_blank">Claude 시작하기 →</a>
+  </div>
+
+  <footer>
+    <p>Made with ♥ for GitHub Pages · <a href="https://anthropic.com" target="_blank">Anthropic</a> · <a href="https://claude.ai" target="_blank">Claude</a></p>
+  </footer>
+
+</body>
+</html>
